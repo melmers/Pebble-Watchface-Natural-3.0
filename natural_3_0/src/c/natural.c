@@ -19,6 +19,7 @@
         Layer TextLayer(prev_sunset_text_layer)
         Layer BitmapLayer(noti_layer)
         Layer BitmapLayer(battery_layer)
+        Layer Analog_Clock
 */
 
 #include <pebble.h>
