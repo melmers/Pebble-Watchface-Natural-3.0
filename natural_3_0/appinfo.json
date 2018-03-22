@@ -11,7 +11,7 @@
         "location"
     ],
     "companyName": "Martin Elmers",
-    "longName": "natural 2.0",
+    "longName": "natural 3.0",
     "projectType": "native",
     "resources": {
         "media": [
@@ -363,7 +363,7 @@
         ]
     },
     "sdkVersion": "2",
-    "shortName": "natural 2.0",
+    "shortName": "natural 3.0",
     "uuid": "179c8e43-5562-453f-9ece-7b004ecb92c2",
     "versionCode": 1,
     "versionLabel": "1.1",
