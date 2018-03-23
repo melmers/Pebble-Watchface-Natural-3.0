@@ -86,7 +86,128 @@ enum {
   KEY_TEMP_TIME_STAMP = 25
 };
 
+// Analog clock code
+//static Window *s_main_window;
+//static Layer *s_main_layer;
+//static BitmapLayer *s_background_layer;
+//static GBitmap *s_background_bitmap;
+static Layer *analog_layer;
 
+static GPath *s_sec_hand_path_ptr = NULL;
+static GPath *s_min_hand_path_ptr = NULL;
+static GPath *s_hour_hand_path_ptr = NULL;
+
+#ifdef PBL_COLOR
+  #define SEC_HAND_COLOR         GColorRed
+  #define MINHOUR_HAND_COLOR     GColorBlack
+#else
+  #define SEC_HAND_COLOR         GColorBlack
+  #define MINHOUR_HAND_COLOR     GColorWhite
+#endif
+
+static const GPathInfo SEC_HAND_PATH = {
+  2,
+  (GPoint []) {
+    {0, -4}, {0, -79},
+  }
+};
+
+static const GPathInfo MIN_HAND_PATH = {
+  3, (GPoint []) {
+    { -8, 10 },
+    { 8, 10 },
+    { 0, -70 }
+  }
+};
+
+static const GPathInfo HOUR_HAND_PATH = {
+  3, (GPoint []){
+    {-6, 10},
+    {6, 10},
+    {0, -45}
+  }
+};
+
+/*
+static const GPathInfo MIN_HAND_PATH = {
+  4, (GPoint []) {
+    { -6, 10 },
+    { 6, 10 },
+    { 6, -60 },
+    { -6, -60 }
+  }
+};
+
+static const GPathInfo HOUR_HAND_PATH = {
+  4, (GPoint []){
+    { -7, 10 },
+    { 7, 10 },
+    { 7, -45 },
+    { -7, -45 }
+  }
+};
+
+static const GPathInfo MIN_HAND_PATH0 = {
+  7,
+  (GPoint []) {
+    {-1,   0},
+    {-1, -13},
+    {-5, -50},
+    {-0, -70},
+    { 5, -50},
+    { 1, -13},
+    { 1,   0},
+  }
+};
+
+static const GPathInfo HOUR_HAND_PATH0 = {
+  7,
+  (GPoint []) {
+    {-3,   0},
+    {-3, -13},
+    {-7, -42},
+    {-0, -50},
+    { 7, -42},
+    { 3, -13},
+    { 3,   0},
+  }
+};
+ */
+
+static void update_analog_display(Layer *analog_layer, GContext* ctx) {
+  // Fill the path second hand:
+  graphics_context_set_fill_color(ctx, MINHOUR_HAND_COLOR);
+  graphics_context_set_stroke_color(ctx, GColorBlack);
+  gpath_draw_filled(ctx, s_hour_hand_path_ptr);
+  gpath_draw_outline(ctx, s_hour_hand_path_ptr);
+  gpath_draw_filled(ctx, s_min_hand_path_ptr);
+  gpath_draw_outline(ctx, s_min_hand_path_ptr);
+  
+  // Fill the path second hand:
+//  graphics_context_set_fill_color(ctx, SEC_HAND_COLOR);
+//  gpath_draw_outline(ctx, s_sec_hand_path_ptr);
+}
+
+static void update_analog_time() {
+  // Get a tm structure
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+
+  // update seconds
+//  gpath_rotate_to(s_sec_hand_path_ptr,  (tick_time->tm_sec * TRIG_MAX_ANGLE / 60));
+
+  // update minutes
+  gpath_rotate_to(s_min_hand_path_ptr,  ((tick_time->tm_min + tick_time->tm_sec/60.0) * TRIG_MAX_ANGLE / 60));
+  // update hours
+  gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0) * TRIG_MAX_ANGLE / 12));
+
+  // update display
+  layer_mark_dirty(analog_layer);
+}
+
+//
+// Natural code starts here
+//
 static TextLayer* init_text_layer(GRect location, GColor color, GColor background, const char *res_id, GTextAlignment alignment) {
   /* Helper function used to initialize any text layer. */
   TextLayer *layer = text_layer_create(location);
@@ -322,6 +443,8 @@ static void daylight_update_proc(Layer *layer, GContext *ctx) {
     gpath_draw_filled(ctx, new_path_ptr);
     gpath_destroy(new_path_ptr);
   }
+  
+  //update_analog_display();
 }
 
 
@@ -613,6 +736,15 @@ static void minute_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
   update_rise_and_set_epochs(now);
   layer_mark_dirty(daylight_layer);
+  
+  update_analog_time();
+
+  // update seconds
+  gpath_rotate_to(s_sec_hand_path_ptr,  (tick_time->tm_sec * TRIG_MAX_ANGLE / 60));
+  // update minutes
+  gpath_rotate_to(s_min_hand_path_ptr,  ((tick_time->tm_min + tick_time->tm_sec/60.0) * TRIG_MAX_ANGLE / 60));
+  // update hours
+  gpath_rotate_to(s_hour_hand_path_ptr, ((tick_time->tm_hour + tick_time->tm_min/60.0) * TRIG_MAX_ANGLE / 12));
 }
 
 
@@ -707,16 +839,32 @@ static void window_load(Window *window) {
   layer_set_frame(moon_layer, GRect(80, 100, MOON_DIAMETER, MOON_DIAMETER));
   layer_set_hidden(moon_layer, true);
   layer_add_child(window_layer, moon_layer);
+  
+  // Create analog clock layer
+  analog_layer = layer_create(bounds);
+  layer_set_update_proc(analog_layer, update_analog_display);
+  layer_add_child(background_layer, analog_layer);
 
   // Create the time text layer.
-  time_text_layer = init_text_layer(GRect(30, 35, 84, 28), GColorBlack, GColorWhite, FONT_KEY_DROID_SERIF_28_BOLD, GTextAlignmentCenter);
+  time_text_layer = init_text_layer(GRect(30, 35, 84, 28), GColorBlack, GColorClear, FONT_KEY_DROID_SERIF_28_BOLD, GTextAlignmentCenter);
   text_layer_set_text(time_text_layer, "N/A");
-  layer_add_child(background_layer, (Layer*) time_text_layer);
+  layer_add_child(window_layer, (Layer*) time_text_layer);
 
   // Create the day text layer
-  day_text_layer = init_text_layer(GRect(30, 94, 84, 28), GColorWhite, GColorClear, FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter);
+  day_text_layer = init_text_layer(GRect(30, 98, 84, 28), GColorWhite, GColorClear, FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter);
   text_layer_set_text(day_text_layer, "000");
   layer_add_child(window_layer, (Layer*) day_text_layer);
+    
+  // setup watch hands
+  // create watch hands with paths
+//  s_sec_hand_path_ptr = gpath_create(&SEC_HAND_PATH);
+  s_min_hand_path_ptr = gpath_create(&MIN_HAND_PATH);
+  s_hour_hand_path_ptr = gpath_create(&HOUR_HAND_PATH);
+  
+  // translate watch hands to middle of the screen
+//  gpath_move_to(s_sec_hand_path_ptr, GPoint(71,83));
+  gpath_move_to(s_min_hand_path_ptr, GPoint(71,83));
+  gpath_move_to(s_hour_hand_path_ptr, GPoint(71,83));
 
   // Initialize times
   prev_sunrise_epoch = ZERO;
@@ -796,6 +944,9 @@ static void init(void) {
   app_message_register_outbox_failed(out_failed_handler);
   app_message_register_outbox_sent(out_sent_handler);
   app_message_open(512, 512);  // Large input and output buffer sizes
+
+  // Make sure the analog time is displayed from the start
+  //update_analog_time();
 
   // Subscribe to 'minute' events and 'bluetooth' events.
   tick_timer_service_subscribe(MINUTE_UNIT, (TickHandler) minute_tick_handler);
