@@ -5,6 +5,7 @@
             BitmapLayer(face_bg_white_layer)
             Layer daylight_layer
                 GPath daylight_path
+        Layer Analog_Clock
             Layer TextLayer(time_text_layer)
             BitmapLayer(face_bg_black_layer)
         Layer sun_layer
@@ -19,7 +20,6 @@
         Layer TextLayer(prev_sunset_text_layer)
         Layer BitmapLayer(noti_layer)
         Layer BitmapLayer(battery_layer)
-        Layer Analog_Clock
 */
 
 #include <pebble.h>
@@ -114,17 +114,17 @@ static const GPathInfo SEC_HAND_PATH = {
 
 static const GPathInfo MIN_HAND_PATH = {
   3, (GPoint []) {
-    { -8, 10 },
-    { 8, 10 },
-    { 0, -70 }
+    { -6, 5 },
+    { 6, 5 },
+    { 0, -40 }
   }
 };
 
 static const GPathInfo HOUR_HAND_PATH = {
   3, (GPoint []){
-    {-6, 10},
-    {6, 10},
-    {0, -45}
+    {-8, 5},
+    {8, 5},
+    {0, -25}
   }
 };
 
@@ -175,8 +175,11 @@ static const GPathInfo HOUR_HAND_PATH0 = {
  */
 
 static void update_analog_display(Layer *analog_layer, GContext* ctx) {
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_circle(ctx, GPoint(71, 83), 23);
+  
   // Fill the path second hand:
-  graphics_context_set_fill_color(ctx, MINHOUR_HAND_COLOR);
+  graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_context_set_stroke_color(ctx, GColorBlack);
   gpath_draw_filled(ctx, s_hour_hand_path_ptr);
   gpath_draw_outline(ctx, s_hour_hand_path_ptr);
@@ -846,12 +849,12 @@ static void window_load(Window *window) {
   layer_add_child(background_layer, analog_layer);
 
   // Create the time text layer.
-  time_text_layer = init_text_layer(GRect(30, 35, 84, 28), GColorBlack, GColorClear, FONT_KEY_DROID_SERIF_28_BOLD, GTextAlignmentCenter);
+  time_text_layer = init_text_layer(GRect(30, 31, 84, 28), GColorBlack, GColorClear, FONT_KEY_DROID_SERIF_28_BOLD, GTextAlignmentCenter);
   text_layer_set_text(time_text_layer, "N/A");
   layer_add_child(window_layer, (Layer*) time_text_layer);
 
   // Create the day text layer
-  day_text_layer = init_text_layer(GRect(30, 98, 84, 28), GColorWhite, GColorClear, FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter);
+  day_text_layer = init_text_layer(GRect(30, 100, 84, 28), GColorWhite, GColorClear, FONT_KEY_GOTHIC_28_BOLD, GTextAlignmentCenter);
   text_layer_set_text(day_text_layer, "000");
   layer_add_child(window_layer, (Layer*) day_text_layer);
     
