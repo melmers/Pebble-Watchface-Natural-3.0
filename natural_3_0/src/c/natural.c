@@ -121,6 +121,16 @@ static const GPathInfo MIN_HAND_PATH = {
 };
 
 static const GPathInfo HOUR_HAND_PATH = {
+  4, (GPoint []){
+    { -5, 5 },
+    { 5, 5 },
+    { 5, -20 },
+    { -5, -20 }
+  }
+};
+
+/*
+static const GPathInfo HOUR_HAND_PATH = {
   3, (GPoint []){
     {-8, 5},
     {8, 5},
@@ -128,7 +138,6 @@ static const GPathInfo HOUR_HAND_PATH = {
   }
 };
 
-/*
 static const GPathInfo MIN_HAND_PATH = {
   4, (GPoint []) {
     { -6, 10 },
@@ -705,11 +714,12 @@ static void load_data() {
 static void minute_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   /* Each minute: update clock, move the sun, check weather (if time to), 
   update moon, update temp, update epochs, redraw day path. */
+  
   APP_LOG(APP_LOG_LEVEL_DEBUG, "PEBBLE: Tick");
   time_t now = time(NULL);
   strftime(time_buffer, sizeof("00:00"), "%I:%M", tick_time);
   text_layer_set_text(time_text_layer, time_buffer);
-  strftime(date_buffer, sizeof("00000"), "%d", tick_time);
+  strftime(date_buffer, sizeof("00"), "%d", tick_time);
   text_layer_set_text(date_text_layer, date_buffer);
   strftime(day_buffer, sizeof("000"), "%a", tick_time);
   text_layer_set_text(day_text_layer, day_buffer);
@@ -741,6 +751,10 @@ static void minute_tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   layer_mark_dirty(daylight_layer);
   
   update_analog_time();
+  
+  if (tick_time->tm_hour == 16 && tick_time->tm_min == 20) {
+    vibes_double_pulse();
+  }
 
   // update seconds
   gpath_rotate_to(s_sec_hand_path_ptr,  (tick_time->tm_sec * TRIG_MAX_ANGLE / 60));
